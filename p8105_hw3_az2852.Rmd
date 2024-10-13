@@ -287,4 +287,5 @@ citi_df %>%
   ) +
   theme_minimal()
 ```
+
 Overall, it appears that ride duration is longer for electric bikes than classic bikes. It seems like membership affects the ride duration of classic bikes more than it does electric bikes. Casuals tend to ride for a longer period of time than members when using a classic bike. It also appears that people ride longer in January than in July when using an electric bike.

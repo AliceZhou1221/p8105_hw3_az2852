@@ -3,13 +3,14 @@ title: "p8105_hw3_az2852"
 output: github_document
 ---
 
-```{r setup}
+```{r setup, message=FALSE}
 library(tidyverse)
 library(lubridate)
 library(patchwork)
 library(viridis)
 ```
 
+# Problem 1
 ```{r}
 library(p8105.datasets)
 data("ny_noaa")
@@ -72,13 +73,13 @@ join the datasets
 mims_df = demo_df %>% 
   left_join(data_df, by = "seqn") %>% 
   mutate(
-    sex = factor(sex),
+    sex = factor(sex, levels = c(1,2), labels = c("men", "women")),
     education = factor(education)
   )
 
 mims_df
 ```
-Produce a reader-friendly table for the number of men and women in each education category, and create a visualization of the age distributions for men and women in each education category. 
+### Produce a reader-friendly table for the number of men and women in each education category
 ```{r}
 mims_df %>% 
   group_by(education, sex) %>% 
@@ -88,23 +89,24 @@ mims_df %>%
   pivot_wider(
     names_from = sex,
     values_from = n_obs
-  ) %>% 
+  ) %>%
   knitr::kable()
 ``` 
 The table shows the number of men (1) and women (2) in each education cateogy (1 = less than high school, 2 = high school equivalent, 3 = more than high school).The analyzed participants consist of 118 men and 110 women. Overall, most of our participants have a more than high school education. The proportions of men and women in each education category are roughly the same.
 
-
+### create a visualization of the age distributions for men and women in each education category. 
 ```{r}
 ggplot(mims_df, aes(x = age, fill = education)) + 
   geom_histogram(alpha = .7) +
   facet_grid(. ~ sex)+
+  scale_y_continuous(breaks = 0:13)+
   labs(
     title = "Age Distribution",
     x = "Age",
     y = "Count",
     color = "Education",
     caption = "Data from the NHANES study")+
-  theme_minimal()
+    theme_minimal()
 ```
 The plots show the age distribution of men (1) and women (2) in each education category (1 = less than high school, 2 = high school equivalent, 3 = more than high school). For men, we see the greatest number of participants in the 20 and 80 age groups. For women, we see the greatest number of participants around 30 and 80. It's surprising that we have a lot of participants that are very old or very young.
 
@@ -126,7 +128,11 @@ mims_df %>%
     caption = "Data from the NHANES study")+
   scale_color_hue(h = c(200, 300))
 ```
-The plot shows total activity by age comparing men and women across education levels (1 = less than high school, 2 = high school equivalent, 3 = more than high school). Overall, activity gradually declines when age increases. The slope seems to be steepest in category 1, followed by category 2 and 3. There seems to be a gender difference in total activity. On average, women in categories 2 and 3 have a higher activity than men in the same education categories, but in category 1 men move more than women.
+The plot shows total activity by age comparing men and women across education levels (1 = less than high school, 2 = high school equivalent, 3 = more than high school).
+
+Overall, activity gradually declines with age from early 20 to 80 years old. The decline in activity is the fastest in category 1, and slowest in category 3. People in category 2 show an increase in activity from 21 to 40, whereas in category 1 there seems to be a decrease during the same time, and the amount to activity doesn't change much for category 3. This suggest that people with different education level might have different lifestyles that requries different amounts of activity.
+
+There also seems to be a gender difference in total activity. On average, women in categories 2 and 3 have a higher activity than men in the same education categories, but in category 1 men move more than women.
 
 ### Make a three-panel plot that shows the 24-hour activity time courses for each education level and use color to indicate sex. Describe in words any patterns or conclusions you can make based on this graph; including smooth trends may help identify differences.
 first, we need variables that count activity in hours
@@ -175,6 +181,7 @@ mims_hr_df %>%
   geom_smooth(se = FALSE) +
   geom_point(alpha = 0.3)+
   facet_grid(. ~ education)+
+  theme_minimal()+
   labs(
     title = "Plot of Total Activity by Hours",
     x = "Hour",
@@ -183,7 +190,7 @@ mims_hr_df %>%
     caption = "Data from the NHANES study")
 
 ```
-Overall, activity increases after around 5 am, reaches the peak at around 10 am, and then plateaus till around 8 pm, and then starts to decrease. Activity is lowest in the early morning around 4 am, and then gradually increases as the person wakes up. The sharpest increase occurs in the morning (5am to 10am). Regarding education levels, similar conclusions can be drawn as before: women who have higher educational status have a higher total activity during the day than their men counterparts. It's hard to tell from the plot if there is any gender differences for activity at night.
+The plot contains 3 outliers from education category 3 whose activity is almost 3 times as high as the others. Overall, activity increases after around 5 am, reaches the peak at around 10 am, and then plateaus till around 8 pm, and then starts to decrease. Activity is lowest in the early morning around 4 am, and then gradually increases as the person wakes up. The sharpest increase occurs in the morning (5am to 10am). Regarding education levels, similar conclusions can be drawn as before: women who have higher educational status have a higher total activity during the day than men do, but at night, activity is roughly the same.
 
 # Problem 3
 import the datasets
@@ -206,8 +213,10 @@ citi_072024_df = citi_072024_df %>%
 
 citi_df = bind_rows(citi_012020_df, citi_072020_df, citi_012024_df, citi_072024_df) %>% 
   rename(membership = member_casual)
+
+citi_df
 ```
-The resulting dataset (99485 x 8) contains data on rides taken on the NYC Citi Bike system. It contain 1% of all rides with a total duration less than 4 hours in each of four months: Jan 2020, Jul 2020, Jan 2024, and Jul 2024. I created a variable "month_year" to indicate which month and year the observation is from. Important variables are: rideable type (classic bike or electric bike), weekdays, duration, start and end station name, and membership(member or casual).
+The resulting dataset (99485 x 8) contains data on rides taken on the NYC Citi Bike system. It contain 1% of all rides with a total duration less than 4 hours in each of four months: Jan 2020, Jul 2020, Jan 2024, and Jul 2024. I created a variable "month_year" to indicate which month and year the observation is from. Important variables are: rideable type (classic bike or electric bike), weekdays, duration, start and end station name, and membership(member or casual). rideable type, weekdays, membership are in character format, we need to turn them into factors later. 
 
 ### Produce a reader-friendly table showing the total number of rides in each combination of year and month separating casual riders and Citi Bike members. Comment on these results.
 ```{r}
@@ -228,9 +237,9 @@ citi_df %>%
   filter(month_year == 072024) %>% 
   group_by(start_station_name) %>% 
   summarize(
-    n_obs = n()
+    n_rides = n()
   ) %>% 
-  arrange(desc(n_obs)) %>% 
+  arrange(desc(n_rides)) %>% 
   slice(1:5) %>% 
   knitr::kable()
 ```
